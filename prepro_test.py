@@ -14,9 +14,10 @@ import nltk
 def prepro_captions(imgs):
   # preprocess all the captions
   print 'example processed tokens:'
-  tokenize = params['prepro_method']
+  tokenize = params['tokenize_method']
   punc = '!#$%&()*+,./:;<=>?@[\\]^`{|}~'
   for i,img in enumerate(imgs):
+    img['processed_tokens'] = []
     for j,s in enumerate(img['captions']):
       if tokenize == 'nltk':
         sentence = str(s).lower().translate(None, punc)
@@ -29,6 +30,8 @@ def prepro_captions(imgs):
         #     sentence = str(i['captions'][0]).lower().translate(None, punc)
         #     start_phrase = set(temp['start'])
         #     token = tokeninze_phrase(sentence.split(), priority_phrase, start_phrase)
+      else:
+        raise ValueError('unrecognized tokenize method!')
       img['processed_tokens'].append(txt)
       if i < 10 and j == 0: print txt
 
