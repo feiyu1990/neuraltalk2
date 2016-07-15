@@ -1,3 +1,4 @@
+require 'inn'
 require 'torch'
 require 'nn'
 require 'nngraph'
@@ -110,6 +111,7 @@ local function eval_split(split, evalopt)
   local loss_sum = 0
   local loss_evals = 0
   local predictions = {}
+  local seq_ground = {}
   while true do
 
     -- fetch a batch of data
@@ -133,9 +135,16 @@ local function eval_split(split, evalopt)
     -- forward the model to also get generated samples for each image
     local sample_opts = { sample_max = opt.sample_max, beam_size = opt.beam_size, temperature = opt.temperature }
     local seq = protos.lm:sample(feats, sample_opts)
+    if data.labels then
+      seq_ground = net_utils.decode_sequence(vocab, data.labels)
+    end
     local sents = net_utils.decode_sequence(vocab, seq)
     for k=1,#sents do
-      local entry = {image_id = data.infos[k].id, caption = sents[k]}
+      if data.labels then
+        entry = {image_id = data.infos[k].id, caption = sents[k], caption_ground = seq_ground[k]}
+      else
+        entry = {image_id = data.infos[k].id, caption = sents[k]}
+      end
       if opt.dump_path == 1 then
         entry.file_name = data.infos[k].file_path
       end

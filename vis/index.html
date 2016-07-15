@@ -63,7 +63,7 @@
         var path = 'imgs/img' + (i + 1) + '.jpg';
         $('<div class="result">')
           .data('image', path)
-          .append($('<p>').text(data[i].caption))
+          .append($('<p>').text(data[i].caption+', '+data[i].caption_ground))
           .appendTo('#results');
       }
       loadVisible();

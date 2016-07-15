@@ -2,8 +2,9 @@
 require 'torch'
 require 'nn'
 require 'nngraph'
+require 'inn'
 -- exotic things
-require 'loadcaffe'
+-- require 'loadcaffe'
 -- local imports
 local utils = require 'misc.utils'
 require 'misc.DataLoader'
@@ -118,8 +119,10 @@ else
   -- initialize the ConvNet
   local cnn_backend = opt.backend
   if opt.gpuid == -1 then cnn_backend = 'nn' end -- override to nn if gpu is disabled
-  local cnn_raw = loadcaffe.load(opt.cnn_proto, opt.cnn_model, cnn_backend)
-  protos.cnn = net_utils.build_cnn(cnn_raw, {encoding_size = opt.input_encoding_size, backend = cnn_backend})
+  local cnn_raw = torch.load(opt.cnn_model)
+  print(cnn_raw)
+  protos.cnn = net_utils.build_cnn_google(cnn_raw, {encoding_size = opt.input_encoding_size, backend = cnn_backend})
+  
   -- initialize a special FeatExpander module that "corrects" for the batch number discrepancy 
   -- where we have multiple captions per one image in a batch. This is done for efficiency
   -- because doing a CNN forward pass is expensive. We expand out the CNN features for each sentence
@@ -148,6 +151,7 @@ assert(cnn_params:nElement() == cnn_grad_params:nElement())
 local thin_lm = protos.lm:clone()
 thin_lm.core:share(protos.lm.core, 'weight', 'bias') -- TODO: we are assuming that LM has specific members! figure out clean way to get rid of, not modular.
 thin_lm.lookup_table:share(protos.lm.lookup_table, 'weight', 'bias')
+
 local thin_cnn = protos.cnn:clone('weight', 'bias')
 -- sanitize all modules of gradient storage so that we dont save big checkpoints
 net_utils.sanitize_gradients(thin_cnn)
@@ -158,8 +162,8 @@ for k,v in pairs(lm_modules) do net_utils.sanitize_gradients(v) end
 -- all the way here at the end because calls such as :cuda() and
 -- :getParameters() reshuffle memory around.
 protos.lm:createClones()
-
 collectgarbage() -- "yeah, sure why not"
+print('HERE')
 -------------------------------------------------------------------------------
 -- Validation evaluation
 -------------------------------------------------------------------------------
@@ -232,7 +236,6 @@ local function lossFun()
   if opt.finetune_cnn_after >= 0 and iter >= opt.finetune_cnn_after then
     cnn_grad_params:zero()
   end
-
   -----------------------------------------------------------------------------
   -- Forward pass
   -----------------------------------------------------------------------------
@@ -250,7 +253,6 @@ local function lossFun()
   local logprobs = protos.lm:forward{expanded_feats, data.labels}
   -- forward the language model criterion
   local loss = protos.crit:forward(logprobs, data.labels)
-  
   -----------------------------------------------------------------------------
   -- Backward pass
   -----------------------------------------------------------------------------
