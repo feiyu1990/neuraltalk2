@@ -34,7 +34,7 @@ def prepro_captions(imgs):
 
 
 def build_vocab(imgs, params):
-  vocab_dict = json.load(open('input_json'))['ix_to_word']
+  vocab_dict = json.load(open('training_json'))['ix_to_word']
   for img in imgs:
     img['final_captions'] = []
     for txt in img['processed_tokens']:
@@ -177,9 +177,8 @@ if __name__ == "__main__":
 
   # input json
   parser.add_argument('--input_json', required=True, help='input json file to process into hdf5')
-  parser.add_argument('--num_val', required=True, type=int, help='number of images to assign to validation data (for CV etc)')
   parser.add_argument('--output_json', default='data.json', help='output json file')
-  parser.add_argument('--input_json', required=True)
+  parser.add_argument('--training_json', required=True)
   parser.add_argument('--output_h5', default='data.h5', help='output h5 file')
   parser.add_argument('--image_precompute', default=None)
   parser.add_argument('--max_imgs', type=int, default=None)
@@ -188,8 +187,6 @@ if __name__ == "__main__":
   # options
   parser.add_argument('--max_length', default=16, type=int, help='max length of a caption, in number of words. captions longer than this get clipped.')
   parser.add_argument('--images_root', default='', help='root location in which images are stored, to be prepended to file_path in input json')
-  parser.add_argument('--word_count_threshold', default=5, type=int, help='only words that occur more than this number of times will be put in vocab')
-  parser.add_argument('--num_test', default=0, type=int, help='number of test images (to withold until very very end)')
 
   args = parser.parse_args()
   params = vars(args) # convert to ordinary dict
