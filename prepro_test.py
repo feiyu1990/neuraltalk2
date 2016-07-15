@@ -37,14 +37,15 @@ def prepro_captions(imgs):
 
 
 def build_vocab(imgs, params):
-  vocab_dict = json.load(open('training_json'))['ix_to_word']
+  vocab_dict = json.load(open(params['training_json']))['ix_to_word']
+  word_set = set(vocab_dict.values())
   for img in imgs:
     img['final_captions'] = []
     for txt in img['processed_tokens']:
-      caption = [w if w in vocab_dict else 'UNK' for w in txt]
+      caption = [w if w in word_set else 'UNK' for w in txt]
       img['final_captions'].append(caption)
 
-  return len(vocab_dict)
+  return vocab_dict
 
 
 def assign_splits(imgs, params):
@@ -109,9 +110,8 @@ def main(params):
   prepro_captions(imgs)
 
  # create the vocab
-  vocab = build_vocab(imgs, params)
-  itow = {i+1:w for i,w in enumerate(vocab)} # a 1-indexed vocab translation table
-  wtoi = {w:i+1 for i,w in enumerate(vocab)} # inverse table
+  itow = build_vocab(imgs, params)
+  wtoi = {i:j for j,i in itow.items()}
 
   # assign the splits
   assign_splits(imgs, params)
