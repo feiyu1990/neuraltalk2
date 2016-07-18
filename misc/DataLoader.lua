@@ -128,6 +128,7 @@ function DataLoader:getBatch(opt)
     local info_struct = {}
     info_struct.id = self.info.images[ix].id
     info_struct.file_path = self.info.images[ix].file_path
+    info_struct.nn_file_path = self.info.images[ix].nn_fotolia_file_path
     table.insert(infos, info_struct)
   end
 

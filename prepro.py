@@ -165,9 +165,10 @@ def main(params):
   prepro_captions(imgs)
 
  # create the vocab
-  vocab = build_vocab(imgs, params)
-  itow = {i+1:w for i,w in enumerate(vocab)} # a 1-indexed vocab translation table
-  wtoi = {w:i+1 for i,w in enumerate(vocab)} # inverse table
+  wtoi = build_vocab(imgs, params)
+  itow = {i:j for j,i in wtoi.items()}
+  # itow = {i+1:w for i,w in enumerate(vocab)} # a 1-indexed vocab translation table
+  # wtoi = {w:i+1 for i,w in enumerate(vocab)} # inverse table
 
   # assign the splits
   assign_splits(imgs, params)
