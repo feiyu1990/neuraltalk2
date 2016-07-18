@@ -168,6 +168,7 @@ def main(params):
     jimg['split'] = img['split']
     if 'file_path' in img: jimg['file_path'] = img['file_path'] # copy it over, might need
     if 'id' in img: jimg['id'] = img['id'] # copy over & mantain an id, if present (e.g. coco ids, useful)
+    if 'nn_fotolia_file_path' in img: jimg['nn_fotolia_file_path'] = img['nn_fotolia_file_path'] # copy over & mantain an id, if present (e.g. coco ids, useful)
 
     out['images'].append(jimg)
 
