@@ -141,7 +141,7 @@ local function eval_split(split, evalopt)
     local sents = net_utils.decode_sequence(vocab, seq)
     for k=1,#sents do
       if data.labels then
-        entry = {image_id = data.infos[k].id, caption = sents[k], caption_ground = seq_ground[k], nn_path = data.infos[k].nn_file_path}
+        entry = {image_id = data.infos[k].id, caption = sents[k], caption_ground = data.infos[k].caption_ground, nn_path = data.infos[k].nn_file_path, nn_caption = data.infos[k].nn_caption}
       else
         entry = {image_id = data.infos[k].id, caption = sents[k]}
       end

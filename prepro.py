@@ -177,41 +177,42 @@ def main(params):
 
   # create output h5 file
   N = len(imgs)
-  f = h5py.File(params['output_h5'], "w")
-  f.create_dataset("labels", dtype='uint32', data=L)
-  f.create_dataset("label_start_ix", dtype='uint32', data=label_start_ix)
-  f.create_dataset("label_end_ix", dtype='uint32', data=label_end_ix)
-  f.create_dataset("label_length", dtype='uint32', data=label_length)
-  if params['image_precompute']:
-    file_name = params['image_precompute']
-    img_orders_already_have = json.load(open(file_name+'.json'))['images']
-    for i,img in enumerate(imgs):
-      if img_orders_already_have[i]['split'] != img['split'] or img_orders_already_have[i]['id'] != img['id']:
-        raise ValueError('DATASET NOT MATCH!')
-    # f['images'] = h5py.ExternalLink(file_name.split('/')[-1]+'.h5', '/'.join(file_name.split('/')[:-1]))
-    fr = h5py.File(file_name + '.h5', 'r')
-    fr.copy('images', f)
-  else:
-    dset = f.create_dataset("images", (N,3,256,256), dtype='uint8') # space for resized images
-    for i,img in enumerate(imgs):
-        I = imread(os.path.join(params['images_root'], img['file_path']))
-        try:
-            Ir = imresize(I, (256,256))
-        except:
-            print 'failed resizing image %s - see http://git.io/vBIE0' % (img['file_path'],)
-            raise
-        # handle grayscale input images
-        if len(Ir.shape) == 2:
-          Ir = Ir[:,:,np.newaxis]
-          Ir = np.concatenate((Ir,Ir,Ir), axis=2)
-        # and swap order of axes from (256,256,3) to (3,256,256)
-        Ir = Ir.transpose(2,0,1)
-        # write to h5
-        dset[i] = Ir
-        if i % 1000 == 0:
-          print 'processing %d/%d (%.2f%% done)' % (i, N, i*100.0/N)
-  f.close()
-  print 'wrote ', params['output_h5']
+  if params['create_h5']:
+    f = h5py.File(params['output_h5'], "w")
+    f.create_dataset("labels", dtype='uint32', data=L)
+    f.create_dataset("label_start_ix", dtype='uint32', data=label_start_ix)
+    f.create_dataset("label_end_ix", dtype='uint32', data=label_end_ix)
+    f.create_dataset("label_length", dtype='uint32', data=label_length)
+    if params['image_precompute']:
+      file_name = params['image_precompute']
+      img_orders_already_have = json.load(open(file_name+'.json'))['images']
+      for i,img in enumerate(imgs):
+        if img_orders_already_have[i]['split'] != img['split'] or img_orders_already_have[i]['id'] != img['id']:
+          raise ValueError('DATASET NOT MATCH!')
+      # f['images'] = h5py.ExternalLink(file_name.split('/')[-1]+'.h5', '/'.join(file_name.split('/')[:-1]))
+      fr = h5py.File(file_name + '.h5', 'r')
+      fr.copy('images', f)
+    else:
+      dset = f.create_dataset("images", (N,3,256,256), dtype='uint8') # space for resized images
+      for i,img in enumerate(imgs):
+          I = imread(os.path.join(params['images_root'], img['file_path']))
+          try:
+              Ir = imresize(I, (256,256))
+          except:
+              print 'failed resizing image %s - see http://git.io/vBIE0' % (img['file_path'],)
+              raise
+          # handle grayscale input images
+          if len(Ir.shape) == 2:
+            Ir = Ir[:,:,np.newaxis]
+            Ir = np.concatenate((Ir,Ir,Ir), axis=2)
+          # and swap order of axes from (256,256,3) to (3,256,256)
+          Ir = Ir.transpose(2,0,1)
+          # write to h5
+          dset[i] = Ir
+          if i % 1000 == 0:
+            print 'processing %d/%d (%.2f%% done)' % (i, N, i*100.0/N)
+    f.close()
+    print 'wrote ', params['output_h5']
   
 
   # create output json file
@@ -224,7 +225,8 @@ def main(params):
     jimg['split'] = img['split']
     if 'file_path' in img: jimg['file_path'] = img['file_path'] # copy it over, might need
     if 'id' in img: jimg['id'] = img['id'] # copy over & mantain an id, if present (e.g. coco ids, useful)
-    
+    if 'captions' in img: jimg['caption_ground'] = img['captions'][0]
+
     out['images'].append(jimg)
   
   json.dump(out, open(params['output_json'], 'w'))
@@ -241,7 +243,8 @@ if __name__ == "__main__":
   parser.add_argument('--output_h5', default='data.h5', help='output h5 file')
   parser.add_argument('--image_precompute', default=None)
   parser.add_argument('--max_imgs', type=int, default=None)
-  
+  parser.add_argument('--create_h5', type=int, default=1)
+
   # options
   parser.add_argument('--max_length', default=16, type=int, help='max length of a caption, in number of words. captions longer than this get clipped.')
   parser.add_argument('--images_root', default='', help='root location in which images are stored, to be prepended to file_path in input json')

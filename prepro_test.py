@@ -10,6 +10,8 @@ import numpy as np
 from scipy.misc import imread, imresize
 import nltk
 
+root = '/mnt/ilcompf3d1/user/yuwang/docker_shared/fotolia/'
+
 
 def prepro_captions(imgs):
   # preprocess all the captions
@@ -97,6 +99,7 @@ def encode_captions(imgs, params, wtoi):
   print 'encoded captions to array of size ', `L.shape`
   return L, label_start_ix, label_end_ix, label_length
 
+
 def main(params):
 
   imgs = json.load(open(params['input_json'], 'r'))
@@ -169,7 +172,8 @@ def main(params):
     if 'file_path' in img: jimg['file_path'] = img['file_path'] # copy it over, might need
     if 'id' in img: jimg['id'] = img['id'] # copy over & mantain an id, if present (e.g. coco ids, useful)
     if 'nn_fotolia_file_path' in img: jimg['nn_fotolia_file_path'] = img['nn_fotolia_file_path'] # copy over & mantain an id, if present (e.g. coco ids, useful)
-
+    if 'nn_caption' in img: jimg['nn_caption'] = img['nn_caption']
+    if 'captions' in img: jimg['caption_ground'] = img['captions'][0]
     out['images'].append(jimg)
 
   json.dump(out, open(params['output_json'], 'w'))
