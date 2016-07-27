@@ -18,3 +18,6 @@ local cnn_proto = proto.cnn
 local lstm_proto = proto.lm
 print(cnn_proto)
 print(lstm_proto)
+
+
+

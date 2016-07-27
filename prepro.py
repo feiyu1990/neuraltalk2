@@ -161,6 +161,7 @@ def main(params):
   if params['max_imgs']:
       imgs = imgs[:params['max_imgs']]
 
+
   # tokenization and preprocessing
   prepro_captions(imgs)
 
@@ -169,20 +170,10 @@ def main(params):
   itow = {i+1:w for i,w in enumerate(vocab)} # a 1-indexed vocab translation table
   wtoi = {w:i+1 for i,w in enumerate(vocab)} # inverse table
 
-  # assign the splits
-  assign_splits(imgs, params)
-
-  # encode captions in large arrays, ready to ship to hdf5 file
-  L, label_start_ix, label_end_ix, label_length = encode_captions(imgs, params, wtoi)
-
   # create output h5 file
   N = len(imgs)
+  f = h5py.File(params['output_h5'], "w")
   if params['create_h5']:
-    f = h5py.File(params['output_h5'], "w")
-    f.create_dataset("labels", dtype='uint32', data=L)
-    f.create_dataset("label_start_ix", dtype='uint32', data=label_start_ix)
-    f.create_dataset("label_end_ix", dtype='uint32', data=label_end_ix)
-    f.create_dataset("label_length", dtype='uint32', data=label_length)
     if params['image_precompute']:
       file_name = params['image_precompute']
       img_orders_already_have = json.load(open(file_name+'.json'))['images']
@@ -193,40 +184,48 @@ def main(params):
       fr = h5py.File(file_name + '.h5', 'r')
       fr.copy('images', f)
     else:
-      dset = f.create_dataset("images", (N,3,256,256), dtype='uint8') # space for resized images
+      count = 0
+      Image_list = []
       for i,img in enumerate(imgs):
-          I = imread(os.path.join(params['images_root'], img['file_path']))
           try:
+              I = imread(os.path.join(params['images_root'], img['file_path']))
               Ir = imresize(I, (256,256))
           except:
-              print 'failed resizing image %s - see http://git.io/vBIE0' % (img['file_path'],)
-              raise
-          # handle grayscale input images
+              continue
+          count += 1
           if len(Ir.shape) == 2:
             Ir = Ir[:,:,np.newaxis]
             Ir = np.concatenate((Ir,Ir,Ir), axis=2)
-          # and swap order of axes from (256,256,3) to (3,256,256)
           Ir = Ir.transpose(2,0,1)
-          # write to h5
-          dset[i] = Ir
+          Image_list.append(Ir)
           if i % 1000 == 0:
             print 'processing %d/%d (%.2f%% done)' % (i, N, i*100.0/N)
-    f.close()
-    print 'wrote ', params['output_h5']
-  
+      # np.save(params['output_h5'][:-3] + '.npy', np.asarray(Image_list, dtype='uint8'))
+      # json.dump(imgs_valid, open(params['output_h5'][:-3] + '_img_valid.json', 'w'))
+      f.create_dataset("images", data=np.asarray(Image_list, dtype='uint8'), dtype='uint8') # space for resized images
+  print 'Total image number: ', len(imgs)
+  # assign the splits
+  assign_splits(imgs, params)
+  # encode captions in large arrays, ready to ship to hdf5 file
+  L, label_start_ix, label_end_ix, label_length = encode_captions(imgs, params, wtoi)
+
+  f.create_dataset("labels", dtype='uint32', data=L)
+  f.create_dataset("label_start_ix", dtype='uint32', data=label_start_ix)
+  f.create_dataset("label_end_ix", dtype='uint32', data=label_end_ix)
+  f.create_dataset("label_length", dtype='uint32', data=label_length)
+  f.close()
+  print 'wrote ', params['output_h5']
 
   # create output json file
   out = {}
   out['ix_to_word'] = itow # encode the (1-indexed) vocab
   out['images'] = []
   for i,img in enumerate(imgs):
-    
     jimg = {}
     jimg['split'] = img['split']
     if 'file_path' in img: jimg['file_path'] = img['file_path'] # copy it over, might need
     if 'id' in img: jimg['id'] = img['id'] # copy over & mantain an id, if present (e.g. coco ids, useful)
     if 'captions' in img: jimg['caption_ground'] = img['captions'][0]
-
     out['images'].append(jimg)
   
   json.dump(out, open(params['output_json'], 'w'))

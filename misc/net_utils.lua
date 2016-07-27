@@ -21,7 +21,6 @@ function net_utils.build_cnn_google(cnn, opt)
   local cnn_part = nn.Sequential()
   for i = 1, layer_num do
     local layer = cnn:get(i)
-    print(i)
     if i == 1 then
       -- convert kernels in first conv layer into RGB format instead of BGR,
       -- which is the order in which it was trained in Caffe
